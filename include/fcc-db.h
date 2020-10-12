@@ -109,9 +109,18 @@ public:
         while ( (std::count(this_record.begin(), this_record.end(), '|') < (static_cast<int>(T::N_FIELDS) - 1) ) and (n < lines.size() - 1) ) 
           this_record += ("<LF>"s + lines[++n]);        // convert any LFs to strings indicating the presence of an LF
         
-        dat_record<T> dr { remove_peripheral_spaces(this_record) };    // this is the line that does all the work
-      
-        this->push_back(dr);            // add record to the object
+        try
+        { dat_record<T> dr { remove_peripheral_spaces(this_record) };    // this is the line that does all the work
+        
+          this->push_back(dr);            // add record to the object
+        }
+        
+        catch (const std::range_error& e)
+        { std::cerr << "Caught exception while processing file: " << fn << std::endl;
+          throw;
+        }
+        
+//        this->push_back(dr);            // add record to the object
       }
       
       //catch (const std::range_error& re)
@@ -295,7 +304,7 @@ using EN_FILE   = dat_file<EN>;
 // HD -------------------------------------------------------
 
 /*
-From https://www.fcc.gov/sites/default/files/public_access_database_definitions_v3.pdf:
+From https://www.fcc.gov/sites/default/files/public_access_database_definitions_v4.pdf:
 
 Application / License Header
 Position Data Element Definition
@@ -351,6 +360,10 @@ Position Data Element Definition
 49  Alien Ruling                                char(1)
 50  Licensee Name Change                        char(1)
 51  Whitespace Indicator                        char(1)
+52  Operation/Performance Requirement Choice    char(1)
+53  Operation/Performance Requirement Answer    char(1)
+54  Discontinuation of Service                  char(1)
+55  Regulatory Compliance                       char(1)
 */
 
 enum class HD { RECORD_TYPE = 0,
@@ -404,6 +417,10 @@ enum class HD { RECORD_TYPE = 0,
                 ALIEN_RULING,
                 LICENSEE_NAME_CHANGE,
                 WHITESPACE_INDICATOR,
+                REQUIREMENT_CHOICE,
+                REQUIREMENT_ANSWER,
+                DISCONTINUED_SERVICE,
+                REGULATORY_COMPLIANCE,
                 N_FIELDS 
               };
 
@@ -413,7 +430,7 @@ using HD_FILE   = dat_file<HD>;
 // HS -------------------------------------------------------
 
 /*
-From https://www.fcc.gov/sites/default/files/public_access_database_definitions_v3.pdf:
+From https://www.fcc.gov/sites/default/files/public_access_database_definitions_v4.pdf:
 
 History
 Position Data Element Definition
@@ -441,7 +458,7 @@ using HS_FILE   = dat_file<HS>;
 // LA -------------------------------------------------------
 
 /*
-From https://www.fcc.gov/sites/default/files/public_access_database_definitions_v3.pdf:
+From https://www.fcc.gov/sites/default/files/public_access_database_definitions_v4.pdf:
 
 License Attachment
 Position Data Element Definition
@@ -473,7 +490,7 @@ using LA_FILE   = dat_file<LA>;
 // SC -------------------------------------------------------
 
 /*
-From https://www.fcc.gov/sites/default/files/public_access_database_definitions_v3.pdf:
+From https://www.fcc.gov/sites/default/files/public_access_database_definitions_v4.pdf:
 
 Special Condition
 Position Data Element Definition
@@ -507,7 +524,7 @@ using SC_FILE   = dat_file<SC>;
 // SF -------------------------------------------------------
 
 /*
-From https://www.fcc.gov/sites/default/files/public_access_database_definitions_v3.pdf:
+From https://www.fcc.gov/sites/default/files/public_access_database_definitions_v4.pdf:
 
 License Free Form Special Condition
 Position Data Element Definition
