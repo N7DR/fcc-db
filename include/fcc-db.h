@@ -98,37 +98,27 @@ public:
   
 // construct from filename
   dat_file(const std::string& fn)
-  { std::vector<std::string> lines { to_lines(remove_char(read_file(fn), '\r')) };
+  { std::vector<std::string> lines { to_lines(remove_char(read_file(fn), '\r')) };      // remove CR characters
   
 // the FCC sometimes puts new lines inside a record, so instead of a quick run through
 // the lines with a lambda, we have to proceed with ridiculous caution
     for (size_t n = 0; n < lines.size(); ++n)
-    { //try                             // remove this and let it throw an uncaught exception
-      { std::string this_record { lines[n] };
+    { std::string this_record { lines[n] };
         
-        while ( (std::count(this_record.begin(), this_record.end(), '|') < (static_cast<int>(T::N_FIELDS) - 1) ) and (n < lines.size() - 1) ) 
-          this_record += ("<LF>"s + lines[++n]);        // convert any LFs to strings indicating the presence of an LF
+      while ( (std::count(this_record.begin(), this_record.end(), '|') < (static_cast<int>(T::N_FIELDS) - 1) ) and (n < lines.size() - 1) ) 
+        this_record += ("<LF>"s + lines[++n]);        // convert any LFs to strings indicating the presence of an LF
         
-        try
-        { dat_record<T> dr { remove_peripheral_spaces(this_record) };    // this is the line that does all the work
+      try
+      { dat_record<T> dr { remove_peripheral_spaces(this_record) };    // this is the line that does all the work
         
-          this->push_back(dr);            // add record to the object
-        }
-        
-        catch (const std::range_error& e)
-        { std::cerr << "Caught exception while processing file: " << fn << std::endl;
-          throw;
-        }
-        
-//        this->push_back(dr);            // add record to the object
+        this->push_back(dr);            // add record to the object
       }
-      
-      //catch (const std::range_error& re)
-      //{ 
-      //}
+        
+      catch (const std::range_error& e)
+      { std::cerr << "Caught exception while processing file: " << fn << std::endl;
+        throw;
+      }
     }  
-  
- //   for_each(lines.begin(), lines.end(), [this](std::string& str) { this->push_back(dat_record<T>(str)); } );  // this is what we would do without LFs in the records
   }
 };
 
@@ -141,10 +131,17 @@ public:
    but that still leaves many fields requiring guesswork (or a shrug of the shoulders)
    as to their meaning.
    
+   The above has been replaced by:
+     https://www.fcc.gov/sites/default/files/uls_code_definitions_20201222.txt
+  There is no longer a PDF version.
+   
    The document:
        https://www.fcc.gov/sites/default/files/public_access_database_definitions_v3.pdf
    defines the field names for the records in the .DAT files. That at least appears to
    be complete and accurate.
+   
+   https://www.fcc.gov/wireless/data/public-access-files-database-downloads includes links
+   to various possibly-useful resources
 */
 
 // AM -------------------------------------------------------
@@ -234,7 +231,7 @@ using CO_FILE   = dat_file<CO>;;
 // EN -------------------------------------------------------
 
 /*
-From https://www.fcc.gov/sites/default/files/public_access_database_definitions_v3.pdf:
+From https://www.fcc.gov/sites/default/files/public_access_database_definitions_v5.pdf:
 
 Entity
 Position Data Element Definition
@@ -266,6 +263,9 @@ Position Data Element Definition
 25  Applicant Type Code Other       char(40)
 26  Status Code                     char(1)
 27  Status Date                     mm/dd/yyyy
+28  3.7 GHz License Type            char(1)
+29  Linked Unique System Identifier numeric(9,0)
+30  Liked Call Sign                 char(10)
 */
 
 enum class EN { RECORD_TYPE = 0,
@@ -295,6 +295,9 @@ enum class EN { RECORD_TYPE = 0,
                 APPLICANT_TYPE_CODE_OTHER,
                 STATUS_CODE,
                 STATUS_DATE,
+                LICENSE_TYPE_37,
+                LINKED_ID,
+                LINKED_CALLSIGN,
                 N_FIELDS 
               };
 
@@ -611,6 +614,8 @@ enum class FCC { ID = 0,                        // unique system identifier
                  EFFECTIVE_DATE,            // I don't really know what this means
                  LAST_ACTION_DATE,          // I don't really know what this means
                  LICENSEE_NAME_CHANGE,
+                 LINKED_ID,
+                 LINKED_CALLSIGN,
                  N_FIELDS 
                };
               
