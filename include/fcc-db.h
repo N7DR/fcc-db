@@ -265,7 +265,7 @@ Position Data Element Definition
 27  Status Date                     mm/dd/yyyy
 28  3.7 GHz License Type            char(1)
 29  Linked Unique System Identifier numeric(9,0)
-30  Liked Call Sign                 char(10)
+30  Linked Call Sign                 char(10)
 */
 
 enum class EN { RECORD_TYPE = 0,
@@ -307,7 +307,7 @@ using EN_FILE   = dat_file<EN>;
 // HD -------------------------------------------------------
 
 /*
-From https://www.fcc.gov/sites/default/files/public_access_database_definitions_v4.pdf:
+From https://www.fcc.gov/sites/default/files/public_access_database_definitions_v6.pdf:
 
 Application / License Header
 Position Data Element Definition
@@ -367,6 +367,10 @@ Position Data Element Definition
 53  Operation/Performance Requirement Answer    char(1)
 54  Discontinuation of Service                  char(1)
 55  Regulatory Compliance                       char(1)
+56  900 MHz Eligibility Certification           char(1)
+57  900 MHz Transition Plan Certification       char(1)
+58  900 MHz Return Spectrum Certification       char(1)
+59  900 MHz Payment Certification               char(1)
 */
 
 enum class HD { RECORD_TYPE = 0,
@@ -424,6 +428,10 @@ enum class HD { RECORD_TYPE = 0,
                 REQUIREMENT_ANSWER,
                 DISCONTINUED_SERVICE,
                 REGULATORY_COMPLIANCE,
+                ELIGIBILITY_900_MHZ,
+                TRANSITION_PLAN_900_MHZ,
+                RETURN_SPRCTRUM_900_MHZ,
+                PAYMENT_900_MHZ,
                 N_FIELDS 
               };
 
