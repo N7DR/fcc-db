@@ -125,7 +125,8 @@ public:
 /* define the contents of each FCC .DAT file; I note that I haven't been able to find definitive
    statements defining the actual meaning of many of the contents of fields.
 
-   The best resource, for what it's worth, seems to be:
+   The best resource, for what it's worth, seems to be linked from:
+     https://www.fcc.gov/wireless/data/public-access-files-database-downloads:
        https://www.fcc.gov/sites/default/files/pubacc_uls_code_def_02162017.txt
        https://www.fcc.gov/sites/default/files/pubacc_uls_code_def_02162017.pdf
    but that still leaves many fields requiring guesswork (or a shrug of the shoulders)
@@ -136,7 +137,7 @@ public:
   There is no longer a PDF version.
    
    The document:
-       https://www.fcc.gov/sites/default/files/public_access_database_definitions_v3.pdf
+       https://www.fcc.gov/sites/default/files/public_access_database_definitions_v6.pdf
    defines the field names for the records in the .DAT files. That at least appears to
    be complete and accurate.
    
