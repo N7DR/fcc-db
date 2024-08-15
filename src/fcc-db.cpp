@@ -19,6 +19,7 @@
 #include <future>
 #include <map>
 #include <thread>
+#include <unordered_set>
 
 using namespace std;
 
@@ -27,8 +28,8 @@ using namespace std;
     \return     object of type <i>T</i> constructed from <i>fn</i>
 */
 template <typename T>
-T get_value(const string& fn)
-{ return T(fn); }
+inline T get_value(const string& fn)
+  { return T(fn); }
 
 /// here we go
 int main(int argc, char** argv)
@@ -45,18 +46,36 @@ int main(int argc, char** argv)
   future<HD_FILE> hd_file_future { async(std::launch::async, get_value<HD_FILE>, dir + "HD.dat"s) };
  
   fcc_file outfile;
+
+// 240814: the HD file seems to contain expiration dates that might have already passed, so we need to determine any expired IDs first
+  unordered_set<string> expired_keys;
   
+  const string today   { date_string() };
+  const auto   hd_file { hd_file_future.get() };
+  
+  for (const HD_RECORD& hd_record : hd_file)
+  { const string& id { hd_record[HD::ID] };
+  
+    if (!(hd_record[HD::EXPIRED_DATE].empty()))
+      if (transform_date(hd_record[HD::EXPIRED_DATE]) < today)
+        expired_keys.insert(id);  
+  }
+    
 // create a closure to append data to the file 
-  auto append_data = [](fcc_file& outfile, const auto& data_file)
-  { for (const auto& in_record : data_file)
-      outfile += in_record;
-  };
+  auto append_data = [&expired_keys] (fcc_file& outfile, const auto& data_file)
+    { for (const auto& in_record : data_file)
+      { const string id { in_record[1] };
+        
+        if (!expired_keys.contains(id))     // don't insert any records that have an expired ID
+          outfile += in_record;
+      }
+    };
    
 // append the relevant data from the four .dat files that seem to contain data we want
   append_data(outfile, am_file_future.get());
   append_data(outfile, co_file_future.get());
   append_data(outfile, en_file_future.get());
-  append_data(outfile, hd_file_future.get());
+  append_data(outfile, hd_file);
     
 // all done; now output it in callsign order
   cout << outfile.to_string() << endl;      // there; that was easy, wasn't it?
@@ -64,7 +83,7 @@ int main(int argc, char** argv)
 
 /// add an AM_RECORD to the file
 void fcc_file::operator+=(const AM_RECORD& amr)
-{ const string key { amr[AM::ID] };
+{ const string& key { amr[AM::ID] };
 
   FCC_RECORD& rec = (*this)[key];
   
@@ -88,7 +107,7 @@ void fcc_file::operator+=(const AM_RECORD& amr)
 
 /// add a CO_RECORD to the file
 void fcc_file::operator+=(const CO_RECORD& cor)
-{ const string key { cor[CO::ID] };
+{ const string& key { cor[CO::ID] };
 
 // look to see if this key exists
   if (this->find(key) == end())
@@ -96,7 +115,7 @@ void fcc_file::operator+=(const CO_RECORD& cor)
     exit(-1);
   }
 
-  FCC_RECORD& rec = (*this)[key];
+  FCC_RECORD& rec { (*this)[key] };
   
   if (rec[FCC::CALLSIGN] != cor[CO::CALLSIGN])
   { cerr << "CO callsign " << cor[CO::CALLSIGN] << " does not match callsign in FCC file: " << rec[FCC::CALLSIGN] << endl;
@@ -113,7 +132,7 @@ void fcc_file::operator+=(const CO_RECORD& cor)
 
 /// add an EN_RECORD to the file
 void fcc_file::operator+=(const EN_RECORD& enr)
-{ const string key { enr[EN::ID] };
+{ const string& key { enr[EN::ID] };
 
 // look to see if this key exists; for some EN records, there is no extant key;
 // probably best to skip the EN record in that case, because we could end up in a horribly
@@ -126,13 +145,6 @@ void fcc_file::operator+=(const EN_RECORD& enr)
   }
 
   FCC_RECORD& rec = (*this)[key];
-  
-// we have a record which may or may not be empty; give it the ID if necessary
-//  if (rec[FCC::ID].empty())
-//    rec[FCC::ID] = key;
-  
-//  if (rec[FCC::CALLSIGN].empty())               // if we just created the record
-//    rec[FCC::CALLSIGN] = enr[EN::CALLSIGN];
   
   if (rec[FCC::CALLSIGN] != enr[EN::CALLSIGN])  // treat this as a fatal error
   { cout << "EN callsign " << enr[EN::CALLSIGN] << " does not match callsign in FCC file: " << rec[FCC::CALLSIGN] << endl;
@@ -164,7 +176,7 @@ void fcc_file::operator+=(const EN_RECORD& enr)
 
 /// add an HD_RECORD to the file
 void fcc_file::operator+=(const HD_RECORD& hdr)
-{ const string key { hdr[HD::ID] };
+{ const string& key { hdr[HD::ID] };
 
 // look to see if this key exists; for some HD records, there is no extant key;
 // probably best to skip the HD record in that case, because we could end up in a horribly
@@ -176,7 +188,7 @@ void fcc_file::operator+=(const HD_RECORD& hdr)
     return;
   }
 
-  FCC_RECORD& rec = (*this)[key];
+  FCC_RECORD& rec { (*this)[key] };
   
   if (rec[FCC::CALLSIGN] != hdr[HD::CALLSIGN])
   { cout << "HD callsign " << hdr[HD::CALLSIGN] << " does not match callsign in FCC file: " << rec[FCC::CALLSIGN] << endl;
@@ -213,7 +225,7 @@ const string fcc_file::to_string(void) const
   map<string, FCC_RECORD, decltype(&compare_calls)> output_map(compare_calls);
 
   for (auto cit = this->cbegin(); cit != this->cend(); ++cit)
-  { const FCC_RECORD& rec = cit->second;
+  { const FCC_RECORD& rec { cit->second };
   
     output_map.insert( { rec[FCC::CALLSIGN], rec } );
   }

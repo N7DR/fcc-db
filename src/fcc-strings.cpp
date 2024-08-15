@@ -16,6 +16,7 @@
 #include "fcc-strings.h"
 
 #include <algorithm>
+#include <array>
 #include <fstream>
 #include <iostream>
 
@@ -28,9 +29,9 @@ using namespace std;
     \param  separator   separator string (typically a single character)
     \return             vector containing the separate components
 */
-const vector<string> split_string(const string& cs, const string& separator)
+vector<string> split_string(const string& cs, const string& separator)
 { size_t         start_posn { 0 };
-  vector<string> rv;
+  vector<string> rv         { };
 
   while (start_posn < cs.length())
   { unsigned long posn { cs.find(separator, start_posn) };
@@ -55,7 +56,7 @@ const vector<string> split_string(const string& cs, const string& separator)
     Throws exception if the file does not exist, or if any
     of several bad things happen. Assumes that the file is a reasonable length.
 */
-const string read_file(const string& filename)
+string read_file(const string& filename)
 { FILE* fp { fopen(filename.c_str(), "rb") };
 
   if (!fp)
@@ -93,7 +94,7 @@ const string read_file(const string& filename)
     \param  char_to_remove  character to be removed from <i>cs</i>
     \return                 <i>cs</i> with all instances of <i>char_to_remove</i> removed
 */
-const string remove_char(const string& cs, const char char_to_remove)
+string remove_char(const string& cs, const char char_to_remove)
 { string rv { cs };
 
   rv.erase( remove(rv.begin(), rv.end(), char_to_remove), rv.end() );
@@ -106,7 +107,7 @@ const string remove_char(const string& cs, const char char_to_remove)
     \param  pf  pointer to transformation function
     \return     <i>cs</i> with the transformation <i>*pf</i> applied
 */
-const string transform_string(const string& cs, int(*pf)(int))
+string transform_string(const string& cs, int(*pf)(int))
 { string rv = cs;
   
   transform(rv.begin(), rv.end(), rv.begin(), pf);
@@ -119,7 +120,7 @@ const string transform_string(const string& cs, int(*pf)(int))
     \param  pf  pointer to transformation function
     \return     <i>cs</i> with the transformation <i>*pf</i> applied
 */
-const string transform_date(const string& us_date)
+string transform_date(const string& us_date)
 { if (us_date.size() != 10)
   { cout << "Error in date: *" << us_date << "*" << endl;
     exit(-1);
@@ -133,7 +134,7 @@ const string transform_date(const string& us_date)
     \param  call2   second call
     \return         whether <i>call1</i> appears before <i>call2</i> in callsign sort order
 */
-const bool compare_calls(const string& call1, const string& call2)
+bool compare_calls(const string& call1, const string& call2)
 {
 /* callsign sort order
 
@@ -191,21 +192,13 @@ const bool compare_calls(const string& call1, const string& call2)
 
   return (l1 < l2);
 }
-
-/*! \brief  Create a string of a certain length, with all characters the same
-    \param  c   Character that the string will contain
-    \param  n   Length of string to be created
-    \return String containing <i>n</i> copies of <i>c</i>
-*/
-inline const std::string create_string(const char c, const int n = 1)
-  { return std::string(n, c); }
   
 /*! \brief      Remove all instances of a specific leading character
     \param  cs  original string
     \param  c   leading character to remove (if present)
     \return     <i>cs</i> with any leading octets with the value <i>c</i> removed
 */
-const string remove_leading(const string& cs, const char c)
+string remove_leading(const string& cs, const char c)
 { const size_t posn { cs.find_first_not_of(create_string(c)) };
   const string rv   { cs.substr(posn) };
   
@@ -217,11 +210,36 @@ const string remove_leading(const string& cs, const char c)
     \param  c   trailing character to remove (if present)
     \return     <i>cs</i> with any trailing octets with the value <i>c</i> removed
 */
-const string remove_trailing(const string& cs, const char c)
+string remove_trailing(const string& cs, const char c)
 { string rv { cs };
 
   while (rv.length() && (rv[rv.length() - 1] == c))
     rv = rv.substr(0, rv.length() - 1);
   
   return rv;
+}
+
+/// return the current date as YYYY-MM-DD
+string date_string(void)
+{ constexpr size_t TIME_BUF_LEN { 26 };
+
+  const time_t now { ::time(NULL) };            // get the time from the kernel
+
+  struct tm structured_time;
+
+  gmtime_r(&now, &structured_time);         // convert to UTC
+
+  array<char, TIME_BUF_LEN> buf;                           // buffer to hold the ASCII date/time info; see man page for gmtime()
+
+  asctime_r(&structured_time, buf.data());                     // convert to ASCII
+
+  auto pad_leftz = [] (const string& str, const int n) { if (str.size() == static_cast<size_t>(n))
+                                                             return str;
+                                                             
+                                                          return "0"s + str;        // assume length of str is 1
+                                                       };
+                                                        
+  const string _date { to_string(structured_time.tm_year + 1900) + "-"s + pad_leftz(to_string(structured_time.tm_mon + 1), 2) + "-"s + pad_leftz(to_string(structured_time.tm_mday), 2) };   // yyyy-mm-dd
+
+  return _date;
 }
