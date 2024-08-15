@@ -24,7 +24,7 @@ COPY = cp
 # name of main executable to build
 PROG = all
 
-CFLAGS = $(INCL) -c -g -O2 -Wall -std=c++2a
+CFLAGS = $(INCL) -c -g -O2 -Wall -std=c++2b
 
 LINKFLAGS = $(LIBINCL)
 
