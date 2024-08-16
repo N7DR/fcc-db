@@ -21,6 +21,8 @@
 #include <thread>
 #include <unordered_set>
 
+#include <ranges>
+
 using namespace std;
 
 /*! \brief      Helper function to return an object of specified type from a string
@@ -30,6 +32,19 @@ using namespace std;
 template <typename T>
 inline T get_value(const string& fn)
   { return T(fn); }
+
+/*! \brief      Convert a range to a particular container type
+    \param  r   range
+    \return     <i>r</i> as a particular container
+    
+    Needed because to_unordered_set is not yet supported
+*/
+template <typename RT, std::ranges::range R>
+auto RANGE_CONTAINER(R&& r) -> RT
+{ auto r_common { std::forward<R>(r) | std::views::common };
+
+  return RT(r_common.begin(), r_common.end());
+}
 
 /// here we go
 int main(int argc, char** argv)
@@ -45,37 +60,25 @@ int main(int argc, char** argv)
   future<EN_FILE> en_file_future { async(std::launch::async, get_value<EN_FILE>, dir + "EN.dat"s) };
   future<HD_FILE> hd_file_future { async(std::launch::async, get_value<HD_FILE>, dir + "HD.dat"s) };
  
-  fcc_file outfile;
+  fcc_file outfile;     // the place to hold the output
 
-// 240814: the HD file seems to contain expiration dates that might have already passed, so we need to determine any expired IDs first
-  unordered_set<string> expired_keys;
-  
+// 240814: the HD file seems to contain expiration dates that might have already passed, so we need to determine any expired IDs (per FCC, Unique System Identifiers) first
   const string today   { date_string() };
   const auto   hd_file { hd_file_future.get() };
-  
-  for (const HD_RECORD& hd_record : hd_file)
-  { const string& id { hd_record[HD::ID] };
-  
-    if (!(hd_record[HD::EXPIRED_DATE].empty()))
-      if (transform_date(hd_record[HD::EXPIRED_DATE]) < today)
-        expired_keys.insert(id);  
-  }
+
+  auto expired { [&today] (const auto& rec) { return ( !(rec[HD::EXPIRED_DATE].empty()) and (transform_date(rec[HD::EXPIRED_DATE]) < today) ); } }; // condition for a record to have expired
+
+  const unordered_set<string> expired_ids { RANGE_CONTAINER<unordered_set<string>> (hd_file | std::ranges::views::filter(expired)
+                                                                                            | std::views::transform( [] (const auto& rec) { return rec[HD::ID]; })) }; // return the ID of the expired record
+
+  auto unexpired { [&expired_ids] (const auto& rec) { return !expired_ids.contains(rec[1]); } };    // is a record unexpired? rec[1] is the ID
+
+  outfile += ( am_file_future.get() | std::ranges::views::filter(unexpired) );      // add all unexpired records
+  outfile += ( co_file_future.get() | std::ranges::views::filter(unexpired) );
+  outfile += ( en_file_future.get() | std::ranges::views::filter(unexpired) );
+  outfile += ( hd_file              | std::ranges::views::filter(unexpired) );
     
-// create a closure to append data to the file 
-  auto append_data = [&expired_keys] (fcc_file& outfile, const auto& data_file)
-    { for (const auto& in_record : data_file)
-      { const string id { in_record[1] };
-        
-        if (!expired_keys.contains(id))     // don't insert any records that have an expired ID
-          outfile += in_record;
-      }
-    };
-   
-// append the relevant data from the four .dat files that seem to contain data we want
-  append_data(outfile, am_file_future.get());
-  append_data(outfile, co_file_future.get());
-  append_data(outfile, en_file_future.get());
-  append_data(outfile, hd_file);
+  outfile.validate();       // check that it looks OK
     
 // all done; now output it in callsign order
   cout << outfile.to_string() << endl;      // there; that was easy, wasn't it?
@@ -237,4 +240,12 @@ const string fcc_file::to_string(void) const
     rv += ( (cit->second).to_string() + '\n' );
     
   return rv;
+}
+
+/// eliminate invalid records
+void fcc_file::validate(void)
+{ erase_if( (*this), [] (const auto& item) { const auto& [key, fcc_record] { item };
+
+                                             return fcc_record[FCC::CALLSIGN].empty();
+                                           } );                                         // remove if no callsign is present
 }

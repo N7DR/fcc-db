@@ -22,6 +22,8 @@
 #include <stdexcept>
 #include <unordered_map>
 
+#include <ranges>
+
 using namespace std::string_literals;
 
 // -----------  dat_record  ----------------
@@ -664,9 +666,19 @@ public:
   
 /// add an HD_RECORD to the file  
   void operator+=(const HD_RECORD& hdr);
-  
+
+/// add a range to the file  
+  template <std::ranges::range R>
+  void operator+=(R&& r)
+  { for (auto it { r.begin() }; it != r.end(); ++it)
+      (*this) += (*it);
+  }
+ 
 /// convert to a string
   const std::string to_string(void) const;
+  
+/// eliminate invalid records
+  void validate(void);
 };
 
 #endif    // FCC_DB_H
