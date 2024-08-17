@@ -64,19 +64,19 @@ public:
   }
   
 /// access the string at a particular field number
-  inline const std::string operator[](const T index) const
+  inline std::string operator[](const T index) const
     { return _data.at(static_cast<size_t>(index)); }
 
 /// access the string at a particular field number    
   inline std::string& operator[](const T index)
     { return _data.at(static_cast<size_t>(index)); }
 
+/// access the string at a particular field number
   inline std::string operator[](const int n) const
-//    { return static_cast<std::vector<dat_record<T>>>(*this).at(n); }
     { return _data.at(static_cast<size_t>(n)); }
 
 /// convert to a string: FIELD_1|FIELD_2|FIELD_3...    
-  const std::string to_string(void) const
+  std::string to_string(void) const
   { std::string rv;
   
     for (size_t n = 0; n < static_cast<size_t>(T::N_FIELDS); ++n)
@@ -669,10 +669,8 @@ public:
 
 /// add a range to the file  
   template <std::ranges::range R>
-  void operator+=(R&& r)
-  { for (auto it { r.begin() }; it != r.end(); ++it)
-      (*this) += (*it);
-  }
+  inline void operator+=(R&& r)
+    { std::ranges::for_each(r, [this] (const auto& v) { (*this) += v; }); }
  
 /// convert to a string
   const std::string to_string(void) const;

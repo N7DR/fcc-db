@@ -19,9 +19,8 @@
 #include <future>
 #include <map>
 #include <thread>
-#include <unordered_set>
-
 #include <ranges>
+#include <unordered_set>
 
 using namespace std;
 
@@ -227,17 +226,14 @@ const string fcc_file::to_string(void) const
 // is made to merge the records or to decide amongst them
   map<string, FCC_RECORD, decltype(&compare_calls)> output_map(compare_calls);
 
-  for (auto cit = this->cbegin(); cit != this->cend(); ++cit)
-  { const FCC_RECORD& rec { cit->second };
-  
-    output_map.insert( { rec[FCC::CALLSIGN], rec } );
-  }
+  for (const auto& [ callsign, fcc_rec ] : *this)
+    output_map.insert( { fcc_rec[FCC::CALLSIGN], fcc_rec } );
     
 // it's now in the right order; build the string and return it
   string rv;
-  
-  for (auto cit = output_map.cbegin(); cit != output_map.cend(); ++cit)
-    rv += ( (cit->second).to_string() + '\n' );
+    
+  for (const auto& [ callsign, output_rec ] : output_map)
+    rv += ( output_rec.to_string() + '\n' );
     
   return rv;
 }
