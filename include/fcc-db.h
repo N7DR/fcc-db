@@ -19,10 +19,9 @@
 #include <algorithm>
 #include <array>
 #include <iostream>
+#include <ranges>
 #include <stdexcept>
 #include <unordered_map>
-
-#include <ranges>
 
 using namespace std::string_literals;
 

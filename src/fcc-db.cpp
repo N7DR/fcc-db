@@ -72,15 +72,23 @@ int main(int argc, char** argv)
 
   auto unexpired { [&expired_ids] (const auto& rec) { return !expired_ids.contains(rec[1]); } };    // is a record unexpired? rec[1] is the ID
 
-  outfile += ( am_file_future.get() | std::ranges::views::filter(unexpired) );      // add all unexpired records
-  outfile += ( co_file_future.get() | std::ranges::views::filter(unexpired) );
-  outfile += ( en_file_future.get() | std::ranges::views::filter(unexpired) );
-  outfile += ( hd_file              | std::ranges::views::filter(unexpired) );
+// 240817: the HD file also seems to contain cancellation dates (for example, if someone has upgraded)
+  auto cancelled { [&today] (const auto& rec) { return ( !(rec[HD::CANCELLATION_DATE].empty()) and (transform_date(rec[HD::CANCELLATION_DATE]) < today) ); } }; // condition for a record to have been cancelled
+ 
+  const unordered_set<string> cancelled_ids { RANGE_CONTAINER<unordered_set<string>> (hd_file | std::ranges::views::filter(cancelled)
+                                                                                              | std::views::transform( [] (const auto& rec) { return rec[HD::ID]; })) }; // return the ID of the cancelled record
+                                                                                              
+  auto uncancelled { [&cancelled_ids] (const auto& rec) { return !cancelled_ids.contains(rec[1]); } };    // is a record uncancelled? rec[1] is the ID
+
+  outfile += ( am_file_future.get() | std::ranges::views::filter(unexpired) | std::ranges::views::filter(uncancelled) );      // add all unexpired and uncancelled records
+  outfile += ( co_file_future.get() | std::ranges::views::filter(unexpired) | std::ranges::views::filter(uncancelled) );
+  outfile += ( en_file_future.get() | std::ranges::views::filter(unexpired) | std::ranges::views::filter(uncancelled) );
+  outfile += ( hd_file              | std::ranges::views::filter(unexpired) | std::ranges::views::filter(uncancelled) );
     
   outfile.validate();       // check that it looks OK
     
 // all done; now output it in callsign order
-  cout << outfile.to_string() << endl;      // there; that was easy, wasn't it?
+  cout << outfile.to_string() << endl;
 }
 
 /// add an AM_RECORD to the file
