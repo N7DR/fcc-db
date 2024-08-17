@@ -581,17 +581,17 @@ using SF_FILE   = dat_file<SF>;
   .DAT files except where those names are duplicated in different .DAT files, in which case 
   the name is here preceded by XX_, where the XX indicates the .DAT file that provides the field
 */
-enum class FCC { ID = 0,                        // unique system identifier
+enum class FCC { ID = 0,                        // 0    // unique system identifier
                  CALLSIGN,
-                 OPERATOR_CLASS,                // called "Operator Class Code" in https://www.fcc.gov/sites/default/files/pubacc_uls_code_def_02162017.txt
-                 GROUP_CODE,                    // I have no idea what this is, but it does take different values
-                 REGION_CODE,                   // basically, call area; REGION_CODE = 11 => Alaska; REGION_CODE 12 => US Virgin Islands
+                 OPERATOR_CLASS,                        // called "Operator Class Code" in https://www.fcc.gov/sites/default/files/pubacc_uls_code_def_02162017.txt
+                 GROUP_CODE,                            // I have no idea what this is, but it does take different values
+                 REGION_CODE,                           // basically, call area; REGION_CODE = 11 => Alaska; REGION_CODE 12 => US Virgin Islands
                  TRUSTEE_CALLSIGN,
-                 TRUSTEE_INDICATOR,             // possibly means that this person is a trustee for another call
-                 SYSTEMATIC_CALLSIGN_CHANGE,    // I don't know what this means
-                 VANITY_CALLSIGN_CHANGE,        // I don't know what this means
+                 TRUSTEE_INDICATOR,                     // possibly means that this person is a trustee for another call
+                 SYSTEMATIC_CALLSIGN_CHANGE,            // I don't know what this means
+                 VANITY_CALLSIGN_CHANGE,                // I don't know what this means
                  VANITY_RELATIONSHIP,
-                 PREVIOUS_CALLSIGN,
+                 PREVIOUS_CALLSIGN,             // 10
                  PREVIOUS_OPERATOR_CLASS,
                  TRUSTEE_NAME,
                  COMMENT_DATE,
@@ -601,7 +601,7 @@ enum class FCC { ID = 0,                        // unique system identifier
                  ENTITY_NAME,
                  FIRST_NAME,
                  MIDDLE_INITIAL,
-                 LAST_NAME,
+                 LAST_NAME,                     // 20
                  SUFFIX,
                  PHONE,
                  FAX,
@@ -611,7 +611,7 @@ enum class FCC { ID = 0,                        // unique system identifier
                  STATE,
                  ZIP_CODE,
                  PO_BOX,
-                 ATTENTION_LINE,
+                 ATTENTION_LINE,                // 30
                  FRN,
                  APPLICANT_TYPE_CODE,
                  APPLICANT_TYPE_CODE_OTHER,
@@ -621,7 +621,7 @@ enum class FCC { ID = 0,                        // unique system identifier
                  RADIO_SERVICE_CODE,
                  GRANT_DATE,
                  EXPIRED_DATE,
-                 CANCELLATION_DATE,
+                 CANCELLATION_DATE,             // 40
                  ELIGIBILITY_RULE_NUM,
                  REVOKED,
                  CONVICTED,
@@ -631,7 +631,7 @@ enum class FCC { ID = 0,                        // unique system identifier
                  LICENSEE_NAME_CHANGE,
                  LINKED_ID,
                  LINKED_CALLSIGN,
-                 N_FIELDS 
+                 N_FIELDS                       // 50
                };
               
 using FCC_RECORD = dat_record<FCC>;

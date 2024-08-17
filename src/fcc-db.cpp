@@ -119,17 +119,22 @@ void fcc_file::operator+=(const CO_RECORD& cor)
 
   FCC_RECORD& rec { (*this)[key] };
   
+// reformat dates
+  auto insert_date = [&cor, &rec] (const auto dst, const auto src) { if (!(cor[src].empty()))
+                                                                       rec[dst] = transform_date(cor[src]);
+                                                                   };  
+  
   if (rec[FCC::CALLSIGN] != cor[CO::CALLSIGN])
   { cerr << "CO callsign " << cor[CO::CALLSIGN] << " does not match callsign in FCC file: " << rec[FCC::CALLSIGN] << endl;
     exit(-1);
   }    
   
-  rec[FCC::COMMENT_DATE] = cor[CO::COMMENT_DATE];
+  insert_date(FCC::COMMENT_DATE, CO::COMMENT_DATE);
+
   rec[FCC::DESCRIPTION]  = cor[CO::DESCRIPTION];
   rec[FCC::CO_STATUS_CODE]  = cor[CO::STATUS_CODE];
   
-  if (!(cor[CO::STATUS_DATE].empty()))
-    rec[FCC::CO_STATUS_DATE] = transform_date(cor[CO::STATUS_DATE]);
+  insert_date(FCC::CO_STATUS_DATE, CO::STATUS_DATE);
 }
 
 /// add an EN_RECORD to the file
@@ -147,6 +152,11 @@ void fcc_file::operator+=(const EN_RECORD& enr)
   }
 
   FCC_RECORD& rec = (*this)[key];
+
+// reformat dates
+  auto insert_date = [&enr, &rec] (const auto dst, const auto src) { if (!(enr[src].empty()))
+                                                                       rec[dst] = transform_date(enr[src]);
+                                                                   };
   
   if (rec[FCC::CALLSIGN] != enr[EN::CALLSIGN])  // treat this as a fatal error
   { cout << "EN callsign " << enr[EN::CALLSIGN] << " does not match callsign in FCC file: " << rec[FCC::CALLSIGN] << endl;
@@ -172,8 +182,7 @@ void fcc_file::operator+=(const EN_RECORD& enr)
   rec[FCC::APPLICANT_TYPE_CODE_OTHER] = enr[EN::APPLICANT_TYPE_CODE_OTHER];
   rec[FCC::EN_STATUS_CODE]            = enr[EN::STATUS_CODE];
   
-  if (!(enr[EN::STATUS_DATE].empty()))
-    rec[FCC::EN_STATUS_DATE] = transform_date(enr[EN::STATUS_DATE]);
+  insert_date(FCC::EN_STATUS_DATE, EN::STATUS_DATE);
 }
 
 /// add an HD_RECORD to the file
@@ -189,8 +198,13 @@ void fcc_file::operator+=(const HD_RECORD& hdr)
   { //cerr << "HD key " << key << " not in FCC file " << endl;
     return;
   }
-
+  
   FCC_RECORD& rec { (*this)[key] };
+
+// reformat dates
+  auto insert_date = [&hdr, &rec] (const auto dst, const auto src) { if (!(hdr[src].empty()))
+                                                                 rec[dst] = transform_date(hdr[src]);
+                                                             };
   
   if (rec[FCC::CALLSIGN] != hdr[HD::CALLSIGN])
   { cout << "HD callsign " << hdr[HD::CALLSIGN] << " does not match callsign in FCC file: " << rec[FCC::CALLSIGN] << endl;
@@ -200,21 +214,18 @@ void fcc_file::operator+=(const HD_RECORD& hdr)
   rec[FCC::LICENSE_STATUS]     = hdr[HD::LICENSE_STATUS];
   rec[FCC::RADIO_SERVICE_CODE] = hdr[HD::RADIO_SERVICE_CODE];
   
-  if (!(hdr[HD::GRANT_DATE].empty()))
-    rec[FCC::GRANT_DATE] = transform_date(hdr[HD::GRANT_DATE]);
-
-  if (!(hdr[HD::EXPIRED_DATE].empty()))
-    rec[FCC::EXPIRED_DATE] = transform_date(hdr[HD::EXPIRED_DATE]);
-
-  if (!(hdr[HD::CANCELLATION_DATE].empty()))
-    rec[FCC::CANCELLATION_DATE] = transform_date(hdr[HD::CANCELLATION_DATE]);
+  insert_date(FCC::GRANT_DATE, HD::GRANT_DATE);
+  insert_date(FCC::EXPIRED_DATE, HD::EXPIRED_DATE);
+  insert_date(FCC::CANCELLATION_DATE, HD::CANCELLATION_DATE);
   
   rec[FCC::ELIGIBILITY_RULE_NUM] = hdr[HD::ELIGIBILITY_RULE_NUM];
   rec[FCC::REVOKED]              = hdr[HD::REVOKED];
   rec[FCC::CONVICTED]            = hdr[HD::CONVICTED];
   rec[FCC::ADJUDGED]             = hdr[HD::ADJUDGED];
-  rec[FCC::EFFECTIVE_DATE]       = hdr[HD::EFFECTIVE_DATE];
-  rec[FCC::LAST_ACTION_DATE]     = hdr[HD::LAST_ACTION_DATE];
+  
+  insert_date(FCC::EFFECTIVE_DATE, HD::EFFECTIVE_DATE);
+  insert_date(FCC::LAST_ACTION_DATE, HD::LAST_ACTION_DATE);
+  
   rec[FCC::LICENSEE_NAME_CHANGE] = hdr[HD::LICENSEE_NAME_CHANGE];
 }
 
